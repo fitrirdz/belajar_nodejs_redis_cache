@@ -1,0 +1,24 @@
+POST http://localhost:3000/api/users
+Content-Type: application/json
+Accept: application/json
+
+{
+    "username": "john_doe",
+    "password": "securepassword",
+    "name": "John Doe"
+}
+
+### LOGIN
+POST http://localhost:3000/api/users/login
+Content-Type: application/json
+Accept: application/json
+
+{
+    "username": "john_doe",
+    "password": "securepassword"
+}
+
+
+### SAY HELLO
+GET http://localhost:3000/api/hello
+Authorization: 5f79d493-680f-427c-aba2-3ff6bad8dfb3

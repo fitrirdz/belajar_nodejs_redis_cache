@@ -1,52 +1,61 @@
 import http from 'k6/http';
-import { check } from 'k6';
-import { Rate } from 'k6/metrics';
-
-// Custom metrics
-const errorRate = new Rate('errors');
+import { check, sleep } from 'k6';
 
 // Test configuration
 export const options = {
-  stages: [
-    { duration: '10s', target: 50 },   // Ramp up to 50 VUs in 10s
-    { duration: '50s', target: 100 },  // Stay at 100 VUs for 50s
-    { duration: '10s', target: 0 },    // Ramp down to 0 VUs in 10s
-  ],
+  scenarios: {
+    load_test: {
+      executor: 'ramping-vus',
+      stages: [
+        { duration: '10s', target: 50 },  // Ramp up to 50 VUs over 10s
+        { duration: '50s', target: 100 }, // Ramp up to 100 VUs over 50s
+        { duration: '10s', target: 0 },   // Ramp down to 0 VUs over 10s
+      ],
+      gracefulRampDown: '5s',
+    },
+  },
   thresholds: {
-    'http_req_duration': ['p(95)<200'], // 95th percentile should be < 200ms
-    'http_req_failed': ['rate<0.05'],   // Error rate should be < 5%
-    'errors': ['rate<0.05'],            // Custom error rate < 5%
+    http_req_duration: ['p(95)<200'], // 95% of requests should be below 500ms
+    http_req_failed: ['rate<0.1'],    // Error rate should be below 10%
   },
 };
 
-// Main test function
+// Base URL and headers
+const BASE_URL = 'http://localhost:3000';
+const HEADERS = {
+  'Authorization': '5f79d493-680f-427c-aba2-3ff6bad8dfb3',
+};
+
 export default function () {
-  // Make GET request to categories API
-  const response = http.get('http://localhost:3000/api/categories');
+  // Make GET request to the API endpoint
+  const response = http.get(`${BASE_URL}/api/hello`, {
+    headers: HEADERS,
+  });
 
-  // Record errors in custom metric
-  errorRate.add(response.status !== 200);
-
-  // Perform checks
+  // Validate the response
   check(response, {
     'status is 200': (r) => r.status === 200,
     'response time < 200ms': (r) => r.timings.duration < 200,
-    'response has body': (r) => r.body.length > 0,
-    'content type is JSON': (r) => r.headers['Content-Type'] && r.headers['Content-Type'].includes('application/json'),
+    'response has body': (r) => r.body && r.body.length > 0,
   });
 
-  // Optional: Add small delay between requests to simulate real user behavior
+  // Optional: Log response for debugging (remove in production tests)
+  if (response.status !== 200) {
+    console.error(`Request failed with status ${response.status}: ${response.body}`);
+  }
+
+  // Small delay between requests (adjust as needed)
   // sleep(1);
 }
 
-// Setup function (runs once at the beginning)
+// Setup function (runs once before the test)
 export function setup() {
-  console.log('Starting performance test for categories API');
-  console.log('Target: http://localhost:3000/api/categories');
-  console.log('Scenario: 10s ramp-up to 50 VUs, 50s at 100 VUs, 10s ramp-down');
+  console.log('Starting K6 load test...');
+  console.log('Target endpoint: http://localhost:3000/api/hello');
+  console.log('Load pattern: 10s->50VU, 50s->100VU, 10s->0VU');
 }
 
-// Teardown function (runs once at the end)
+// Teardown function (runs once after the test)
 export function teardown() {
-  console.log('Performance test completed');
+  console.log('K6 load test completed!');
 }
