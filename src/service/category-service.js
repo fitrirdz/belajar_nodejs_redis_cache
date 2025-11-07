@@ -1,13 +1,9 @@
 import {prismaClient} from "../application/database.js";
-import Redis from "ioredis";
-
-const redis = new Redis({
-  host: "localhost",
-  port: 6379,
-  db: 0,
-});
+import {getRedisClient} from "../application/redis.js";
 
 const findAll = async () => {
+  const redis = getRedisClient();
+  
   // apakah ada di redis atau tidak?
   const json = await redis.get("categories");
 

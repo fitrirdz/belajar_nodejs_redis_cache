@@ -9,7 +9,8 @@
   "jest": {
     "transform": {
       "^.+\\.[t|j]sx?$": "babel-jest"
-    }
+    },
+    "globalTeardown": "./test/teardown.js"
   },
   "author": "Eko Kurniawan Khannedy",
   "license": "ISC",
