@@ -23,7 +23,7 @@ export const options = {
 // Base URL and headers
 const BASE_URL = 'http://localhost:3000';
 const HEADERS = {
-  'Authorization': '5f79d493-680f-427c-aba2-3ff6bad8dfb3',
+  'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpvaG5fZG9lIiwiaWF0IjoxNzYyNTA3OTE4LCJleHAiOjE3NjI1OTQzMTh9.d1bAPQEN2feHhed5Jdr9HEEOghmLiJ4IKmzCbfr3Vf4',
 };
 
 export default function () {
