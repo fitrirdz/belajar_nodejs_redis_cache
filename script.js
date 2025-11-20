@@ -1,52 +1,154 @@
 import http from 'k6/http';
-import { check } from 'k6';
-import { Rate } from 'k6/metrics';
+import {check, sleep} from 'k6';
+import {SharedArray} from 'k6/data';
 
-// Custom metrics
-const errorRate = new Rate('errors');
+// Load tokens
+const tokens = new SharedArray ('tokens', () => [
+  'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  'b2c3d4e5-f6a7-8901-bcde-f12345678901',
+  'c3d4e5f6-a7b8-9012-cdef-123456789012',
+  'd4e5f6a7-b8c9-0123-def0-234567890123',
+  'e5f6a7b8-c9d0-1234-ef01-345678901234',
+  'f6a7b8c9-d0e1-2345-f012-456789012345',
+  'a7b8c9d0-e1f2-3456-0123-567890123456',
+  'b8c9d0e1-f2a3-4567-1234-678901234567',
+  'c9d0e1f2-a3b4-5678-2345-789012345678',
+  'd0e1f2a3-b4c5-6789-3456-890123456789',
+  'e1f2a3b4-c5d6-7890-4567-901234567890',
+  'f2a3b4c5-d6e7-8901-5678-012345678901',
+  'a3b4c5d6-e7f8-9012-6789-123456789012',
+  'b4c5d6e7-f8a9-0123-7890-234567890123',
+  'c5d6e7f8-a9b0-1234-8901-345678901234',
+  'd6e7f8a9-b0c1-2345-9012-456789012345',
+  'e7f8a9b0-c1d2-3456-0123-567890123456',
+  'f8a9b0c1-d2e3-4567-1234-678901234567',
+  'a9b0c1d2-e3f4-5678-2345-789012345678',
+  'b0c1d2e3-f4a5-6789-3456-890123456789',
+  'c1d2e3f4-a5b6-7890-4567-901234567890',
+  'd2e3f4a5-b6c7-8901-5678-012345678901',
+  'e3f4a5b6-c7d8-9012-6789-123456789012',
+  'f4a5b6c7-d8e9-0123-7890-234567890123',
+  'a5b6c7d8-e9f0-1234-8901-345678901234',
+  'b6c7d8e9-f0a1-2345-9012-456789012345',
+  'c7d8e9f0-a1b2-3456-0123-567890123456',
+  'd8e9f0a1-b2c3-4567-1234-678901234567',
+  'e9f0a1b2-c3d4-5678-2345-789012345678',
+  'f0a1b2c3-d4e5-6789-3456-890123456789',
+  'a1b2c3d4-e5f6-7890-abcd-ef1234567891',
+  'b2c3d4e5-f6a7-8901-bcde-f12345678902',
+  'c3d4e5f6-a7b8-9012-cdef-123456789013',
+  'd4e5f6a7-b8c9-0123-def0-234567890124',
+  'e5f6a7b8-c9d0-1234-ef01-345678901235',
+  'f6a7b8c9-d0e1-2345-f012-456789012346',
+  'a7b8c9d0-e1f2-3456-0123-567890123457',
+  'b8c9d0e1-f2a3-4567-1234-678901234568',
+  'c9d0e1f2-a3b4-5678-2345-789012345679',
+  'd0e1f2a3-b4c5-6789-3456-890123456780',
+  'e1f2a3b4-c5d6-7890-4567-901234567891',
+  'f2a3b4c5-d6e7-8901-5678-012345678902',
+  'a3b4c5d6-e7f8-9012-6789-123456789013',
+  'b4c5d6e7-f8a9-0123-7890-234567890124',
+  'c5d6e7f8-a9b0-1234-8901-345678901235',
+  'd6e7f8a9-b0c1-2345-9012-456789012346',
+  'e7f8a9b0-c1d2-3456-0123-567890123457',
+  'f8a9b0c1-d2e3-4567-1234-678901234568',
+  'a9b0c1d2-e3f4-5678-2345-789012345679',
+  'b0c1d2e3-f4a5-6789-3456-890123456780',
+  'c1d2e3f4-a5b6-7890-4567-901234567891',
+  'd2e3f4a5-b6c7-8901-5678-012345678902',
+  'e3f4a5b6-c7d8-9012-6789-123456789013',
+  'f4a5b6c7-d8e9-0123-7890-234567890124',
+  'a5b6c7d8-e9f0-1234-8901-345678901235',
+  'b6c7d8e9-f0a1-2345-9012-456789012346',
+  'c7d8e9f0-a1b2-3456-0123-567890123457',
+  'd8e9f0a1-b2c3-4567-1234-678901234568',
+  'e9f0a1b2-c3d4-5678-2345-789012345679',
+  'f0a1b2c3-d4e5-6789-3456-890123456780',
+  'a1b2c3d4-e5f6-7890-abcd-ef1234567892',
+  'b2c3d4e5-f6a7-8901-bcde-f12345678903',
+  'c3d4e5f6-a7b8-9012-cdef-123456789014',
+  'd4e5f6a7-b8c9-0123-def0-234567890125',
+  'e5f6a7b8-c9d0-1234-ef01-345678901236',
+  'f6a7b8c9-d0e1-2345-f012-456789012347',
+  'a7b8c9d0-e1f2-3456-0123-567890123458',
+  'b8c9d0e1-f2a3-4567-1234-678901234569',
+  'c9d0e1f2-a3b4-5678-2345-789012345680',
+  'd0e1f2a3-b4c5-6789-3456-890123456781',
+  'e1f2a3b4-c5d6-7890-4567-901234567892',
+  'f2a3b4c5-d6e7-8901-5678-012345678903',
+  'a3b4c5d6-e7f8-9012-6789-123456789014',
+  'd4e5f6a7-b8c9-0123-def0-234567890125',
+  'e5f6a7b8-c9d0-1234-ef01-345678901236',
+  'f6a7b8c9-d0e1-2345-f012-456789012347',
+  'a7b8c9d0-e1f2-3456-0123-567890123458',
+  'b8c9d0e1-f2a3-4567-1234-678901234569',
+  'c9d0e1f2-a3b4-5678-2345-789012345680',
+  'd0e1f2a3-b4c5-6789-3456-890123456781',
+  'e1f2a3b4-c5d6-7890-4567-901234567892',
+  'f2a3b4c5-d6e7-8901-5678-012345678903',
+  'a3b4c5d6-e7f8-9012-6789-123456789014',
+  'b4c5d6e7-f8a9-0123-7890-234567890125',
+  'c5d6e7f8-a9b0-1234-8901-345678901236',
+  'd6e7f8a9-b0c1-2345-9012-456789012347',
+  'e7f8a9b0-c1d2-3456-0123-567890123458',
+  'f8a9b0c1-d2e3-4567-1234-678901234569',
+  'a9b0c1d2-e3f4-5678-2345-789012345680',
+  'b0c1d2e3-f4a5-6789-3456-890123456781',
+  'c1d2e3f4-a5b6-7890-4567-901234567892',
+  'd2e3f4a5-b6c7-8901-5678-012345678903',
+  'e3f4a5b6-c7d8-9012-6789-123456789014',
+  'f4a5b6c7-d8e9-0123-7890-234567890125',
+  'a5b6c7d8-e9f0-1234-8901-345678901236',
+  'b6c7d8e9-f0a1-2345-9012-456789012347',
+  'c7d8e9f0-a1b2-3456-0123-567890123458',
+  'd8e9f0a1-b2c3-4567-1234-678901234569',
+  'e9f0a1b2-c3d4-5678-2345-789012345680',
+  'f0a1b2c3-d4e5-6789-3456-890123456781',
+]);
 
-// Test configuration
 export const options = {
-  stages: [
-    { duration: '10s', target: 50 },   // Ramp up to 50 VUs in 10s
-    { duration: '50s', target: 100 },  // Stay at 100 VUs for 50s
-    { duration: '10s', target: 0 },    // Ramp down to 0 VUs in 10s
-  ],
-  thresholds: {
-    'http_req_duration': ['p(95)<200'], // 95th percentile should be < 200ms
-    'http_req_failed': ['rate<0.05'],   // Error rate should be < 5%
-    'errors': ['rate<0.05'],            // Custom error rate < 5%
-  },
+  vus: tokens.length, // 1 VU per token
+  duration: '60s',
+
+  // biarkan gagal rate limit, tapi jangan ada socket error
+  noConnectionReuse: false, // wajib untuk kestabilan
 };
 
-// Main test function
 export default function () {
-  // Make GET request to categories API
-  const response = http.get('http://localhost:3000/api/categories');
+  const token = tokens[__VU - 1]; // setiap VU pakai 1 token unik
 
-  // Record errors in custom metric
-  errorRate.add(response.status !== 200);
+  const url = 'http://localhost:3000/api/users/current';
+  const params = {
+    headers: {
+      Accept: 'application/json',
+      Authorization: token,
+    },
+    timeout: '3s', // menghindari connection reset
+  };
 
-  // Perform checks
-  check(response, {
-    'status is 200': (r) => r.status === 200,
-    'response time < 200ms': (r) => r.timings.duration < 200,
-    'response has body': (r) => r.body.length > 0,
-    'content type is JSON': (r) => r.headers['Content-Type'] && r.headers['Content-Type'].includes('application/json'),
+  // 4 request bersamaan dalam 1 batch
+  const responses = http.batch ([
+    ['GET', url, null, params],
+    ['GET', url, null, params],
+    ['GET', url, null, params],
+    ['GET', url, null, params],
+  ]);
+
+  let success = 0;
+  let limited = 0;
+
+  for (let r of responses) {
+    if (r.status === 200) success++;
+    if (r.status === 429) limited++;
+  }
+
+  check (success, {
+    '2 sukses (200)': v => v === 2,
   });
 
-  // Optional: Add small delay between requests to simulate real user behavior
-  // sleep(1);
-}
+  check (limited, {
+    '2 kena rate limit (429)': v => v === 2,
+  });
 
-// Setup function (runs once at the beginning)
-export function setup() {
-  console.log('Starting performance test for categories API');
-  console.log('Target: http://localhost:3000/api/categories');
-  console.log('Scenario: 10s ramp-up to 50 VUs, 50s at 100 VUs, 10s ramp-down');
-}
-
-// Teardown function (runs once at the end)
-export function teardown() {
-  console.log('Performance test completed');
+  sleep (1); // 4 request per detik token
 }
